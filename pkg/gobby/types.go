@@ -19,8 +19,26 @@ type Client struct {
 
 ///
 
+type Gobby struct {
+	Lobbies    map[LobbyID]*Lobby
+	Prefix     string // default: /lobby/
+	Dispatcher *Dispatcher
+	Router     *Router
+}
+
+func New() (g *Gobby) {
+	g = &Gobby{
+		Lobbies: make(map[LobbyID]*Lobby),
+		Prefix:  "/lobby/",
+	}
+	g.Dispatcher = &Dispatcher{g}
+	g.Router = &Router{g}
+	return
+}
+
+///
+
 type Lobby struct {
 	ID      LobbyID
-	Prefix  string // default: /lobby/
-	Version string
+	Clients map[string]*Client
 }

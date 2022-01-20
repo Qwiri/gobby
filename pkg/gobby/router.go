@@ -7,14 +7,14 @@ import (
 )
 
 type Router struct {
-	*Lobby
+	*Gobby
 }
 
-func (r *Router) routeLobbyCreate(ctx *fiber.Ctx) error {
+func (*Router) routeLobbyCreate(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (r *Router) routeGetSocket(socket *websocket.Conn) {
+func (*Router) routeGetSocket(socket *websocket.Conn) {
 	gameID := socket.Params("id")
 	log.Infof("[ws] got connection to id %s", gameID)
 
@@ -35,7 +35,7 @@ func (r *Router) routeGetSocket(socket *websocket.Conn) {
 	// TODO: remove client from session
 }
 
-func (l *Lobby) routeUpgradeWebsocket(ctx *fiber.Ctx) error {
+func (*Router) routeUpgradeWebsocket(ctx *fiber.Ctx) error {
 	if websocket.IsWebSocketUpgrade(ctx) {
 		ctx.Locals("allowed", true)
 		return ctx.Next()
