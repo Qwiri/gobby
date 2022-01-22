@@ -1,6 +1,9 @@
 package gobby
 
-import "github.com/gofiber/websocket/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
+)
 
 ///
 
@@ -21,19 +24,29 @@ type Client struct {
 
 type Gobby struct {
 	Lobbies    map[LobbyID]*Lobby
-	Prefix     string // default: /lobby/
+	Prefix     string
 	Dispatcher *Dispatcher
 	Router     *Router
 }
 
-func New() (g *Gobby) {
+func New(app *fiber.App) (g *Gobby) {
 	g = &Gobby{
 		Lobbies: make(map[LobbyID]*Lobby),
 		Prefix:  "/lobby/",
 	}
-	g.Dispatcher = &Dispatcher{g}
-	g.Router = &Router{g}
+	g.Dispatcher = NewDispatcher(g)
+	// add router and register routes
+	g.Router = NewRouter(g, app)
+	g.Router.Hook()
 	return
+}
+
+func (g *Gobby) OnReceive(events ...interface{}) {
+	g.Dispatcher.onReceive = events
+}
+
+func (g *Gobby) OnSend(events ...interface{}) {
+	g.Dispatcher.onSend = events
 }
 
 ///
@@ -41,4 +54,11 @@ func New() (g *Gobby) {
 type Lobby struct {
 	ID      LobbyID
 	Clients map[string]*Client
+}
+
+///
+
+type IncomingMessage struct {
+	Client     *Client
+	RequestUID string
 }
