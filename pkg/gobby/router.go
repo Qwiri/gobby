@@ -1,15 +1,11 @@
 package gobby
 
 import (
+	"errors"
 	"github.com/apex/log"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 )
-
-type Router struct {
-	g   *Gobby
-	app *fiber.App
-}
 
 func NewRouter(g *Gobby, app *fiber.App) *Router {
 	return &Router{
@@ -28,25 +24,45 @@ func (*Router) routeLobbyCreate(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (*Router) routeGetSocket(socket *websocket.Conn) {
-	gameID := socket.Params("id")
-	log.Infof("[ws] got connection to id %s", gameID)
+var ErrLobbyNotFound = errors.New("lobby not found")
 
-	// TODO: Send Lobby Version
+func (r *Router) routeGetSocket(socket *websocket.Conn) {
+	lobbyID := LobbyID(socket.Params("id"))
+	log.Infof("[ws] got new connection requesting lobby %s", lobbyID)
 
-	// TODO: make sure the lobby exists
-
-	log.Infof("[ws] websocket connection with game %+v", gameID)
-	for {
-		if _, msg, err := socket.ReadMessage(); err != nil {
-			_ = msg
-			log.WithError(err).Warn("[ws] cannot read message from websocket")
-			break
-		}
-		// TODO: handle message
+	// send gobby and app version to connected client
+	if err := NewBasicMessage("VERSION", Version, r.g.AppVersion).Send(socket); err != nil {
+		log.Warnf("failed to send version to %v: %v", socket.RemoteAddr(), err)
+		return
 	}
 
-	// TODO: remove client from session
+	// check if lobby exists
+	r.g.lobbiesMu.RLock()
+	defer r.g.lobbiesMu.RUnlock()
+	if _, ok := r.g.Lobbies[lobbyID]; !ok {
+		_ = NewErrorMessage(ErrLobbyNotFound).Send(socket)
+		return
+	}
+	log.Infof("[ws] requested lobby %s exists. Entering message loop.", lobbyID)
+
+	for {
+		if mt, msg, err := socket.ReadMessage(); err != nil {
+			if err == websocket.ErrCloseSent {
+				Infof(socket, "closed the connection")
+			} else {
+				Warnf(socket, "cannot read message: %s", err.Error())
+			}
+			break
+		} else {
+			if mt != websocket.TextMessage {
+				Warnf(socket, "sent non-text data")
+				continue
+			}
+			r.g.Dispatcher.handleMessage(socket, msg)
+		}
+	}
+
+	r.g.Dispatcher.handleClose(socket)
 }
 
 func (*Router) routeUpgradeWebsocket(ctx *fiber.Ctx) error {

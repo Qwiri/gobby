@@ -1,0 +1,9 @@
+{
+  "id": "d2073010-cea5-47c1-aa03-9adef30225de",
+  "to": "4e428af2-540c-4bc5-b1a9-90f20c8c16ca",
+  "respond": false,
+  "cmd": "CHAT",
+  "args": [
+    "Hello World!"
+  ]
+}

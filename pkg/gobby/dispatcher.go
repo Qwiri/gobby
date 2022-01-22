@@ -1,55 +1,69 @@
 package gobby
 
-import "github.com/gofiber/websocket/v2"
+import (
+	"errors"
+	"github.com/gofiber/websocket/v2"
+)
 
-type BasicEvent func(*websocket.Conn, *Lobby) error
-type MessagedEvent func(*websocket.Conn, *Lobby, string) error
-type ByteEvent func(*websocket.Conn, *Lobby, []byte) error
+type BasicClientEvent func(*Client, *Lobby) error
+type MessagedEvent func(*websocket.Conn, *Client, *Lobby, string) error
+type ByteEvent func(*websocket.Conn, *Client, *Lobby, []byte) error
 
-type Dispatcher struct {
-	gobby     *Gobby
-	onReceive []interface{}
-	onSend    []interface{}
-}
+type EventType uint8
 
-///
+const (
+	ReceiveEvent EventType = iota
+	SendEvent
+	JoinEvent
+	LeaveEvent
+)
 
 func NewDispatcher(g *Gobby) *Dispatcher {
 	return &Dispatcher{
 		gobby:     g,
-		onReceive: make([]interface{}, 0),
-		onSend:    make([]interface{}, 0),
+		listeners: make(map[EventType][]interface{}),
 	}
 }
 
-func (d *Dispatcher) AddReceive(events ...interface{}) {
-	d.onReceive = append(d.onReceive, events...)
+var ErrInvalidListenerType = errors.New("invalid listener type")
+
+func (d *Dispatcher) On(typ EventType, listener interface{}) error {
+	// check if listener is valid
+	if !IsListener(listener) {
+		return ErrInvalidListenerType
+	}
+	d.listeners[typ] = append(d.listeners[typ], listener)
+	return nil
 }
 
-func (d *Dispatcher) AddSend(events ...interface{}) {
-	d.onSend = append(d.onSend, events...)
+func (d *Dispatcher) MustOn(typ EventType, listener interface{}) {
+	if err := d.On(typ, listener); err != nil {
+		panic(err)
+	}
 }
 
 ///
 
-func (d *Dispatcher) call(events []interface{}, socket *websocket.Conn, lobby *Lobby, message []byte) error {
-	for _, ev := range events {
+func (d *Dispatcher) Call(typ EventType, socket *websocket.Conn, client *Client, lobby *Lobby, message []byte) error {
+	for _, ev := range d.listeners[typ] {
 		switch f := ev.(type) {
-		case BasicEvent:
-			return f(socket, lobby)
+		case BasicClientEvent:
+			return f(client, lobby)
 		case ByteEvent:
-			return f(socket, lobby, message)
+			return f(socket, client, lobby, message)
 		case MessagedEvent:
-			return f(socket, lobby, string(message))
+			return f(socket, client, lobby, string(message))
 		}
 	}
 	return nil
 }
 
-func (d *Dispatcher) CallMessageReceive(socket *websocket.Conn, lobby *Lobby, message []byte) error {
-	return d.call(d.onReceive, socket, lobby, message)
+func (d *Dispatcher) handleMessage(socket *websocket.Conn, data []byte) {
+	// TODO: implement this
+
+	// TODO: ignore reply-messages (maybe add an extra event type for that)
 }
 
-func (d *Dispatcher) CallMessageSend(socket *websocket.Conn, lobby *Lobby, message []byte) error {
-	return d.call(d.onSend, socket, lobby, message)
+func (d *Dispatcher) handleClose(socket *websocket.Conn) {
+	// TODO: implement this
 }
