@@ -39,7 +39,9 @@ func (r *Router) routeGetSocket(socket *websocket.Conn) {
 	// check if lobby exists
 	r.g.lobbiesMu.RLock()
 	defer r.g.lobbiesMu.RUnlock()
-	if _, ok := r.g.Lobbies[lobbyID]; !ok {
+
+	lobby, ok := r.g.Lobbies[lobbyID]
+	if !ok {
 		_ = NewErrorMessage(ErrLobbyNotFound).Send(socket)
 		return
 	}
@@ -58,7 +60,11 @@ func (r *Router) routeGetSocket(socket *websocket.Conn) {
 				Warnf(socket, "sent non-text data")
 				continue
 			}
-			r.g.Dispatcher.handleMessage(socket, msg)
+			if err = r.g.Dispatcher.handleMessage(socket, lobby, msg); err != nil {
+				if err = NewBasicMessage("PANIC", err).Send(socket); err != nil {
+					Warnf(socket, "cannot send panic message: %v", err)
+				}
+			}
 		}
 	}
 

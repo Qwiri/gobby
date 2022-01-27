@@ -3,6 +3,7 @@ package gobby
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"strings"
 	"sync"
 )
 
@@ -13,12 +14,14 @@ type Gobby struct {
 	Prefix     string
 	Dispatcher *Dispatcher
 	Router     *Router
+	Handlers   map[string]*Handler
 }
 
 func New(app *fiber.App) (g *Gobby) {
 	g = &Gobby{
-		Lobbies: make(map[LobbyID]*Lobby),
-		Prefix:  "/lobby/",
+		Lobbies:  make(map[LobbyID]*Lobby),
+		Handlers: make(map[string]*Handler),
+		Prefix:   "/lobby/",
 	}
 	g.Dispatcher = NewDispatcher(g)
 	// add router and register routes
@@ -39,7 +42,7 @@ func (g *Gobby) BySocket(socket *websocket.Conn) (*Lobby, *Client, bool) {
 }
 
 func (g *Gobby) RemoveClient(lobby *Lobby, client *Client) {
-	delete(lobby.Clients, client.Name)
+	delete(lobby.Clients, strings.ToLower(client.Name))
 	if err := g.Dispatcher.Call(LeaveEvent, client.Socket, client, lobby, nil); err != nil {
 		Warnf(client, "cannot call leave event: %v", err)
 	}
