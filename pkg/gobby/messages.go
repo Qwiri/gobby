@@ -65,10 +65,14 @@ func (m *Message) SendAndAwaitReply(socket *websocket.Conn, timeout time.Duratio
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
+	log.Info("created timeout")
+
 	// send message to client
 	if err := m.Send(socket); err != nil {
 		return nil, err
 	}
+
+	log.Info("waiting for reply")
 
 	select {
 	case res := <-cr:
@@ -91,8 +95,8 @@ func NewErrorMessage(err error) *Message {
 	return NewBasicMessage("ERROR", err.Error())
 }
 
-func NewReplyMessage(replyID MessageID, cmd string, args ...interface{}) (m *Message) {
-	m = NewBasicMessage(cmd, args...)
-	m.To = replyID
-	return
+func (m *Message) Reply(cmd string, args ...interface{}) *Message {
+	r := NewBasicMessage(cmd, args...)
+	r.To = m.ID
+	return r
 }

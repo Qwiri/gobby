@@ -8,7 +8,9 @@ import (
 var ErrInvalidListenerType = errors.New("invalid listener type")
 
 type BasicEvent func(*Client, *Lobby) error
+type AsyncBasicEvent func(*Client, *Lobby) error
 type MessageEvent func(*websocket.Conn, *Client, *Lobby, *Message) error
+type AsyncMessageEvent func(*websocket.Conn, *Client, *Lobby, *Message) error
 
 type EventType uint8
 
@@ -30,8 +32,10 @@ func NewDispatcher(g *Gobby) *Dispatcher {
 // if the listener argument is no valid listener, On returns an error
 func (d *Dispatcher) On(typ EventType, listener ...interface{}) error {
 	// check if listener is valid
-	if !IsListener(listener) {
-		return ErrInvalidListenerType
+	for _, l := range listener {
+		if !IsListener(l) {
+			return ErrInvalidListenerType
+		}
 	}
 	d.listeners[typ] = append(d.listeners[typ], listener...)
 	return nil
@@ -52,6 +56,22 @@ func (d *Dispatcher) Call(typ EventType, socket *websocket.Conn, client *Client,
 			return f(client, lobby)
 		case MessageEvent:
 			return f(socket, client, lobby, message)
+		case AsyncBasicEvent:
+			go func() {
+				err := f(client, lobby)
+				if err != nil {
+					Warnf(socket, "error calling async event: %v", err)
+				}
+			}()
+			return nil
+		case AsyncMessageEvent:
+			go func() {
+				err := f(socket, client, lobby, message)
+				if err != nil {
+					Warnf(socket, "error calling async event: %v", err)
+				}
+			}()
+			return nil
 		}
 	}
 	return nil

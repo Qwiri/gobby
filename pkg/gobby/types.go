@@ -3,6 +3,7 @@ package gobby
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"sync"
 )
 
 type LobbyID string
@@ -30,6 +31,7 @@ type Lobby struct {
 	Clients map[string]*Client
 	Secret  string
 	Meta    interface{}
+	lock    sync.RWMutex
 }
 
 func NewLobby(id LobbyID) *Lobby {
@@ -37,6 +39,7 @@ func NewLobby(id LobbyID) *Lobby {
 		ID:      id,
 		State:   0,
 		Clients: make(map[string]*Client),
+		Secret:  "hello",
 	}
 }
 

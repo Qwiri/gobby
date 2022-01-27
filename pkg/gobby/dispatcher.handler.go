@@ -14,6 +14,7 @@ var (
 	ErrArgs              = errors.New("args mismatch")
 	ErrSecretMismatch    = errors.New("secret mismatch")
 	ErrNameAlreadyExists = errors.New("a player with the same name already exists")
+	ErrNameInvalid       = errors.New("invalid name")
 )
 
 func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, data []byte) (err error) {
@@ -39,8 +40,12 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, da
 		}
 
 		// check if a name or token was given
+		// and if the name is valid
 		if name == "" {
 			return ErrArgs
+		}
+		if !IsNameValid(name) {
+			return ErrNameInvalid
 		}
 
 		// check if the lobby is password protected
