@@ -64,6 +64,9 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, da
 		client := NewClient(socket, name)
 		lobby.Clients[strings.ToLower(name)] = client
 
+		// send JOINED message to client to let client know the join was successful
+		_ = NewBasicMessage("JOINED", name).Send(socket)
+
 		return d.Call(JoinEvent, socket, client, lobby, nil)
 	}
 	return
