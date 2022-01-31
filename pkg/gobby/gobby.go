@@ -61,3 +61,7 @@ func (g *Gobby) On(typ EventType, listener ...interface{}) error {
 func (g *Gobby) MustOn(typ EventType, listener ...interface{}) {
 	g.Dispatcher.MustOn(typ, listener...)
 }
+
+func (g *Gobby) Handle(name string, handler *Handler) {
+	g.Handlers[strings.ToLower(name)] = handler
+}
