@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/Qwiri/gobby/pkg/gobby"
+	"github.com/Qwiri/gobby/pkg/validate"
 	"github.com/apex/log"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 	"math/rand"
 	"time"
 )
@@ -17,6 +19,17 @@ func main() {
 
 	app := fiber.New()
 	g := gobby.New(app)
+
+	g.Handle("CHAT", &gobby.Handler{
+		Validation: validate.Schemes{
+			validate.Number().As("time"),
+			validate.String().Min(2).Max(16).As("username"),
+			validate.String().Min(2).As("chat"),
+		},
+		Handler: gobby.MessagedHandler(func(conn *websocket.Conn, lobby *gobby.Lobby, client *gobby.Client, message *gobby.Message) error {
+			return nil
+		}),
+	})
 
 	g.MustOn(gobby.JoinEvent, gobby.AsyncBasicEvent(func(client *gobby.Client, lobby *gobby.Lobby) error {
 		gobby.Infof(client, "joined lobby %s. Requesting client version ...", lobby.ID)

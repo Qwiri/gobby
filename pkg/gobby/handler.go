@@ -2,6 +2,7 @@ package gobby
 
 import (
 	"errors"
+	"github.com/Qwiri/gobby/pkg/validate"
 	"github.com/gofiber/websocket/v2"
 )
 
@@ -11,7 +12,7 @@ type Handler struct {
 	// States (optional)
 	States State
 	// Validation to check the args for
-	Validation *Validation
+	Validation validate.Schemes
 	// Handler should be either BasicHandler or MessagedHandler
 	// Required
 	Handler interface{}
