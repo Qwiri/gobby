@@ -9,13 +9,17 @@ var (
 )
 
 type NumberScheme struct {
-	scheme
-	min *int64
-	max *int64
+	name string
+	min  *int64
+	max  *int64
 }
 
 func Number() *NumberScheme {
 	return &NumberScheme{}
+}
+
+func (ns *NumberScheme) Name() string {
+	return ns.name
 }
 
 func (ns *NumberScheme) As(name string) *NumberScheme {

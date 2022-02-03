@@ -13,7 +13,7 @@ var (
 )
 
 type StringScheme struct {
-	scheme
+	name      string
 	minLength int
 	maxLength int
 	pattern   *regexp.Regexp
@@ -22,6 +22,11 @@ type StringScheme struct {
 func String() *StringScheme {
 	return &StringScheme{}
 }
+
+func (st *StringScheme) Name() string {
+	return st.name
+}
+
 func (st *StringScheme) As(name string) *StringScheme {
 	st.name = name
 	return st
