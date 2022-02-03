@@ -15,13 +15,15 @@ type Handler struct {
 	Validation validate.Schemes
 	// Handler should be either BasicHandler or MessagedHandler
 	// Required
-	Handler interface{}
+	Handler func(*Handle) error
 }
 
-type (
-	BasicHandler    func(*websocket.Conn, *Lobby, *Client) error
-	MessagedHandler func(*websocket.Conn, *Lobby, *Client, *Message) error
-)
+type Handle struct {
+	Lobby   *Lobby
+	Client  *Client
+	Message *Message
+	Args    validate.Result
+}
 
 type (
 	Role  uint8
@@ -37,7 +39,7 @@ var (
 	ErrRoleNotAllowed  = errors.New("handler cannot be used with this role")
 )
 
-func (h *Handler) Execute(socket *websocket.Conn, lobby *Lobby, client *Client, msg *Message) error {
+func (h *Handler) Execute(socket *websocket.Conn, lobby *Lobby, client *Client, msg *Message) (err error) {
 	// Check State
 	if h.States != 0 {
 		if lobby.State&h.States != lobby.State {
@@ -50,12 +52,17 @@ func (h *Handler) Execute(socket *websocket.Conn, lobby *Lobby, client *Client, 
 			return ErrRoleNotAllowed
 		}
 	}
-	switch t := h.Handler.(type) {
-	case BasicHandler:
-		return t(socket, lobby, client)
-	case MessagedHandler:
-		return t(socket, lobby, client, msg)
-	default:
-		panic("invalid handler type")
+	// Check validation
+	var res validate.Result
+	if len(h.Validation) > 0 {
+		if res, err = h.Validation.Check(msg.Args...); err != nil {
+			return
+		}
 	}
+	return h.Handler(&Handle{
+		Lobby:   lobby,
+		Client:  client,
+		Message: msg,
+		Args:    res,
+	})
 }

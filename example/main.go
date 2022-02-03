@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Qwiri/gobby/pkg/gobby"
 	"github.com/Qwiri/gobby/pkg/validate"
 	"github.com/apex/log"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/websocket/v2"
 	"math/rand"
 	"time"
 )
@@ -26,9 +26,13 @@ func main() {
 			validate.String().Min(2).Max(16).As("username"),
 			validate.String().Min(2).As("chat"),
 		},
-		Handler: gobby.MessagedHandler(func(conn *websocket.Conn, lobby *gobby.Lobby, client *gobby.Client, message *gobby.Message) error {
+		Handler: func(event *gobby.Handle) error {
+			username := event.Args.String("username")
+			chat := event.Args.String("chat")
+
+			fmt.Printf("%s wrote `%s` in lobby %s\n", username, chat, event.Lobby.ID)
 			return nil
-		}),
+		},
 	})
 
 	g.MustOn(gobby.JoinEvent, gobby.AsyncBasicEvent(func(client *gobby.Client, lobby *gobby.Lobby) error {
