@@ -105,7 +105,7 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 	}
 
 	// run handler
-	h, ok := d.gobby.Handlers[msg.Command]
+	h, ok := d.gobby.Handlers[strings.ToLower(msg.Command)]
 	if !ok {
 		return ErrHandlerNotFound
 	}
