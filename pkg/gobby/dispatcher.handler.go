@@ -90,7 +90,7 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 		Warnf(socket, "cannot decode JSON message")
 		return
 	}
-	msg.Command = strings.TrimSpace(strings.ToUpper(msg.Command))
+	msg.Command = strings.TrimSpace(strings.ToLower(msg.Command))
 
 	// check if the message is a reply
 	if msg.To != "" {
@@ -105,7 +105,7 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 	}
 
 	// run handler
-	h, ok := d.gobby.Handlers[strings.ToLower(msg.Command)]
+	h, ok := d.gobby.Handlers[msg.Command]
 	if !ok {
 		return ErrHandlerNotFound
 	}
