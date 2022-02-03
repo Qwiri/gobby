@@ -3,12 +3,15 @@ module github.com/Qwiri/gobby
 go 1.17
 
 require (
+	github.com/apex/log v1.9.0
+	github.com/gofiber/fiber/v2 v2.24.0
+	github.com/gofiber/websocket/v2 v2.0.15
+	github.com/google/uuid v1.3.0
+)
+
+require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apex/log v1.9.0 // indirect
 	github.com/fasthttp/websocket v1.4.5 // indirect
-	github.com/gofiber/fiber/v2 v2.24.0 // indirect
-	github.com/gofiber/websocket/v2 v2.0.15 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/savsgio/gotils v0.0.0-20211223103454-d0aaa54c5899 // indirect
