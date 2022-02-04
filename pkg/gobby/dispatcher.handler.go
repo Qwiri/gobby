@@ -67,7 +67,10 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, da
 		// send JOINED message to client to let client know the join was successful
 		_ = NewBasicMessage("JOINED", name).Send(socket)
 
-		return d.Call(JoinEvent, socket, client, lobby, nil)
+		d.call(joinType, &Join{
+			Client: client,
+			Lobby:  lobby,
+		})
 	}
 	return
 }
@@ -84,6 +87,13 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 		return d.handleUnauthorized(socket, lobby, data)
 	}
 
+	// send raw message event
+	d.call(messageReceiveRawType, &MessageReceiveRaw{
+		Sender: client,
+		Lobby:  lobby,
+		Data:   data,
+	})
+
 	// decode message
 	var msg *Message
 	if err = json.Unmarshal(data, &msg); err != nil {
@@ -94,13 +104,7 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 
 	// check if the message is a reply
 	if msg.To != "" {
-		d.handleReply(socket, lobby, client, msg)
-		return
-	}
-
-	// call event to listeners
-	if err = d.Call(ReceiveEvent, socket, client, lobby, msg); err != nil {
-		Warnf(socket, "cannot call receive event: %v", err)
+		d.handleReply(lobby, client, msg)
 		return
 	}
 
@@ -109,25 +113,32 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 	if !ok {
 		return ErrHandlerNotFound
 	}
+
+	// call event to listeners
+	d.call(messageReceiveType, &MessageReceive{
+		Sender:  client,
+		Lobby:   lobby,
+		Message: msg,
+		Handler: h,
+	})
+
 	return h.Execute(socket, lobby, client, msg)
 }
 
-func (d *Dispatcher) handleReply(socket *websocket.Conn, lobby *Lobby, client *Client, msg *Message) {
+func (d *Dispatcher) handleReply(lobby *Lobby, client *Client, msg *Message) {
 	replyMessageHooksMu.RLock()
 	reply, ok := replyMessageHooks[msg.To]
 	replyMessageHooksMu.RUnlock()
-
 	if !ok {
 		Warnf(client, "tried to send a reply to an unknown message")
 		return
 	}
-
-	// send reply and call event
 	reply <- msg
-
-	if err := d.Call(ReceiveReplyEvent, socket, client, lobby, msg); err != nil {
-		Warnf(socket, "cannot call reply event: %v", err)
-	}
+	d.call(messageReceiveReplyType, &MessageReceiveReply{
+		Sender:  client,
+		Lobby:   lobby,
+		Message: msg,
+	})
 	return
 }
 

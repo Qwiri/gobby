@@ -35,19 +35,22 @@ func main() {
 		},
 	})
 
-	g.MustOn(gobby.JoinEvent, gobby.AsyncBasicEvent(func(client *gobby.Client, lobby *gobby.Lobby) error {
+	g.MustOn(func(event *gobby.Join) {
+		client, lobby := event.Client, event.Lobby
 		gobby.Infof(client, "joined lobby %s. Requesting client version ...", lobby.ID)
 
 		// ask for client version and await response (blocks current goroutine)
 		resp, err := gobby.NewBasicMessage("VERSION").SendAndAwaitReply(client.Socket, 10*time.Second)
 		if err != nil {
 			gobby.Warnf(client, "did not respond in time: %v", err)
-			return err
+			return
 		}
 
 		gobby.Infof(client, "replied with version: %s", resp.Args[0].(string))
-		return nil
-	}))
+		return
+	})
 
-	app.Listen(":8081")
+	if err := app.Listen(":8081"); err != nil {
+		log.WithError(err).Warn("cannot serve")
+	}
 }

@@ -43,11 +43,6 @@ func NewLobby(id LobbyID) *Lobby {
 	}
 }
 
-type Dispatcher struct {
-	gobby     *Gobby
-	listeners map[EventType][]interface{}
-}
-
 type Router struct {
 	g   *Gobby
 	app *fiber.App

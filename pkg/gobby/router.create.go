@@ -1,6 +1,8 @@
 package gobby
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+)
 
 func (g *Gobby) LobbyExists(id LobbyID) (ok bool) {
 	g.lobbiesMu.RLock()
@@ -18,6 +20,12 @@ func (r *Router) routeLobbyCreate(ctx *fiber.Ctx) error {
 
 	// create lobby
 	lobby := NewLobby(id)
+
+	// dispatch lobby create event
+	r.g.Dispatcher.call(lobbyCreateType, &LobbyCreate{
+		Lobby: lobby,
+		Addr:  ctx.IP(),
+	})
 
 	r.g.lobbiesMu.Lock()
 	r.g.Lobbies[id] = lobby

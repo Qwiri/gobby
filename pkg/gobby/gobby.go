@@ -42,24 +42,26 @@ func (g *Gobby) BySocket(socket *websocket.Conn) (*Lobby, *Client, bool) {
 }
 
 func (g *Gobby) RemoveClient(lobby *Lobby, client *Client) {
+	// call leave event
+	g.Dispatcher.call(leaveType, &Leave{
+		Client: client,
+		Lobby:  lobby,
+	})
 	delete(lobby.Clients, strings.ToLower(client.Name))
-	if err := g.Dispatcher.Call(LeaveEvent, client.Socket, client, lobby, nil); err != nil {
-		Warnf(client, "cannot call leave event: %v", err)
-	}
 }
 
 // Aliases
 
 // On registers a BasicClientEvent, ByteEvent or MessagedEvent
 // if the listener argument is no valid listener, On returns an error
-func (g *Gobby) On(typ EventType, listener ...interface{}) error {
-	return g.Dispatcher.On(typ, listener...)
+func (g *Gobby) On(listener ...interface{}) error {
+	return g.Dispatcher.On(listener...)
 }
 
 // MustOn registers a BasicClientEvent, ByteEvent or MessagedEvent
 // if the listener argument is no valid listener, the application panics
-func (g *Gobby) MustOn(typ EventType, listener ...interface{}) {
-	g.Dispatcher.MustOn(typ, listener...)
+func (g *Gobby) MustOn(listener ...interface{}) {
+	g.Dispatcher.MustOn(listener...)
 }
 
 func (g *Gobby) Handle(name string, handler *Handler) {
