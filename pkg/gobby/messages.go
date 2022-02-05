@@ -39,6 +39,11 @@ func (m *Message) Marshal() (res []byte) {
 	return
 }
 
+func (m *Message) SendTo(client *Client) (err error) {
+	err = client.Socket.WriteMessage(websocket.TextMessage, m.Marshal())
+	return
+}
+
 func (m *Message) Send(socket *websocket.Conn) (err error) {
 	err = socket.WriteMessage(websocket.TextMessage, m.Marshal())
 	return
@@ -95,8 +100,12 @@ func NewErrorMessage(err error) *Message {
 	return NewBasicMessage("ERROR", err.Error())
 }
 
-func (m *Message) Reply(cmd string, args ...interface{}) *Message {
-	r := NewBasicMessage(cmd, args...)
-	r.To = m.ID
-	return r
+func (m *Message) CreateReply(msg *Message) *Message {
+	msg.To = m.ID
+	return msg
+}
+
+func (m *Message) ReplyTo(client *Client, msg *Message) error {
+	msg.To = m.ID
+	return msg.SendTo(client)
 }
