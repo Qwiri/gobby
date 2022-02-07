@@ -11,15 +11,7 @@ import (
 
 var Version = "1.0.0"
 
-func IsListener(i interface{}) bool {
-	switch i.(type) {
-	case BasicEvent, MessageEvent, AsyncMessageEvent, AsyncBasicEvent:
-		return true
-	}
-	return false
-}
-
-func prefix(i interface{}) string {
+func Prefix(i interface{}) string {
 	switch t := i.(type) {
 	case *Client:
 		return fmt.Sprintf("[client:%s]", t.Name)
@@ -34,11 +26,11 @@ func prefix(i interface{}) string {
 }
 
 func Infof(i interface{}, msg string, args ...interface{}) {
-	log.Infof(fmt.Sprintf("%s %s", prefix(i), msg), args...)
+	log.Infof(fmt.Sprintf("%s %s", Prefix(i), msg), args...)
 }
 
 func Warnf(i interface{}, msg string, args ...interface{}) {
-	log.Warnf(fmt.Sprintf("%s %s", prefix(i), msg), args...)
+	log.Warnf(fmt.Sprintf("%s %s", Prefix(i), msg), args...)
 }
 
 const CharSet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz123456789"
