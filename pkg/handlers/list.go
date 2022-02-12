@@ -16,7 +16,7 @@ var List = &gobby.Handler{
 			names[i] = c.Name
 			i += 1
 		}
-		return event.Message.ReplyTo(event.Client,
-			gobby.NewBasicMessage("LIST", util.StringToAnyArray(names)...))
+		return event.Message.ReplyWith(event.Client,
+			*gobby.NewBasicMessage("LIST", util.StringToAnyArray(names)...))
 	},
 }

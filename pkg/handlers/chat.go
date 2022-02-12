@@ -15,12 +15,14 @@ var Chat = &gobby.Handler{
 	Handler: func(event *gobby.Handle) error {
 		user := event.String("user")
 		message := event.String("message")
+
 		// build socket message and send to every client in lobby
 		msg := gobby.NewBasicMessage("CHAT", user, message)
+
+		var err error
 		for _, c := range event.Lobby.Clients {
-			var err error
 			if c == event.Client {
-				err = event.Message.ReplyTo(c, *msg)
+				err = event.Message.ReplyWith(c, *msg)
 			} else {
 				err = msg.SendTo(c)
 			}
