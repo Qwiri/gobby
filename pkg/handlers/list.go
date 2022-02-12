@@ -7,7 +7,7 @@ import (
 )
 
 //goland:noinspection GoUnusedGlobalVariable
-var ListHandler = &gobby.Handler{
+var List = &gobby.Handler{
 	Validation: validate.Schemes{},
 	Handler: func(event *gobby.Handle) error {
 		names := make([]string, len(event.Lobby.Clients))

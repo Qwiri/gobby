@@ -25,6 +25,14 @@ type Handle struct {
 	Args    validate.Result
 }
 
+func (h *Handle) String(name string) string {
+	return h.Args.String(name)
+}
+
+func (h *Handle) Number(name string) int64 {
+	return h.Args.Number(name)
+}
+
 type (
 	Role  uint8
 	State uint8
