@@ -18,7 +18,13 @@ var Chat = &gobby.Handler{
 		// build socket message and send to every client in lobby
 		msg := gobby.NewBasicMessage("CHAT", user, message)
 		for _, c := range event.Lobby.Clients {
-			if err := msg.SendTo(c); err != nil {
+			var err error
+			if c == event.Client {
+				err = event.Message.ReplyTo(c, *msg)
+			} else {
+				err = msg.SendTo(c)
+			}
+			if err != nil {
 				log.WithError(err).Warnf("cannot send chat message to %s", c.Name)
 			}
 		}

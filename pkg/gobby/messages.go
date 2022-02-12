@@ -105,7 +105,7 @@ func (m *Message) CreateReply(msg *Message) *Message {
 	return msg
 }
 
-func (m *Message) ReplyTo(client *Client, msg *Message) error {
+func (m *Message) ReplyTo(client *Client, msg Message) error {
 	msg.To = m.ID
 	return msg.SendTo(client)
 }
