@@ -64,6 +64,14 @@ func (g *Gobby) MustOn(listener ...interface{}) {
 	g.Dispatcher.MustOn(listener...)
 }
 
+type Handlers map[string]*Handler
+
 func (g *Gobby) Handle(name string, handler *Handler) {
 	g.Handlers[strings.ToLower(name)] = handler
+}
+
+func (g *Gobby) HandleAll(h Handlers) {
+	for n, v := range h {
+		g.Handle(n, v)
+	}
 }
