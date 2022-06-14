@@ -39,7 +39,6 @@ func NewLobby(id LobbyID) *Lobby {
 		ID:      id,
 		State:   0,
 		Clients: make(map[string]*Client),
-		Secret:  "hello",
 	}
 }
 

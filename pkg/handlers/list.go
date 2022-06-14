@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/Qwiri/gobby/pkg/gobby"
-	"github.com/Qwiri/gobby/pkg/util"
 	"github.com/Qwiri/gobby/pkg/validate"
 )
 
@@ -17,6 +16,6 @@ var List = &gobby.Handler{
 			i += 1
 		}
 		return event.Message.ReplyWith(event.Client,
-			*gobby.NewBasicMessage("LIST", util.StringToAnyArray(names)...))
+			*gobby.NewBasicMessageWith("LIST", names...))
 	},
 }

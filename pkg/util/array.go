@@ -1,9 +1,9 @@
 package util
 
-func StringToAnyArray(str []string) (r []interface{}) {
-	r = make([]interface{}, len(str))
-	for i, v := range str {
+func ConvertArray[T any](arr []T) (r []interface{}) {
+	r = make([]interface{}, len(arr))
+	for i, v := range arr {
 		r[i] = v
 	}
-	return
+	return r
 }

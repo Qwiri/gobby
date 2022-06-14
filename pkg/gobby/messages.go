@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Qwiri/gobby/pkg/util"
 	"github.com/apex/log"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
@@ -94,6 +95,9 @@ func NewBasicMessage(cmd string, args ...interface{}) *Message {
 		Command: cmd,
 		Args:    args,
 	}
+}
+func NewBasicMessageWith[T any](cmd string, args ...T) *Message {
+	return NewBasicMessage(cmd, util.ConvertArray(args)...)
 }
 
 func NewErrorMessage(err error) *Message {
