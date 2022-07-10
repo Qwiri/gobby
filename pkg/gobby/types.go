@@ -42,6 +42,14 @@ func NewLobby(id LobbyID) *Lobby {
 	}
 }
 
+// ChangeState sets a newState for a lobby and broadcasts the state change to all clients with
+// the old state[0] and the new[1] state als arguments
+func (l *Lobby) ChangeState(newState State) {
+	oldState := l.State
+	l.State = newState
+	l.BroadcastForce(NewBasicMessage("STATE_CHANGE", oldState, newState))
+}
+
 type Router struct {
 	g   *Gobby
 	app *fiber.App
