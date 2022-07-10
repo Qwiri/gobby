@@ -15,6 +15,7 @@ var (
 	ErrSecretMismatch    = errors.New("secret mismatch")
 	ErrNameAlreadyExists = errors.New("a player with the same name already exists")
 	ErrNameInvalid       = errors.New("invalid name")
+	ErrCancelled         = errors.New("event cancelled")
 )
 
 func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, data []byte) (err error) {
@@ -60,17 +61,21 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, da
 			return ErrNameAlreadyExists
 		}
 
-		// create client and add to game
 		client := NewClient(socket, name)
+		event := &Join{
+			Client: client,
+			Lobby:  lobby,
+		}
+		d.call(joinType, event)
+
+		if event.cancelled {
+			return ErrCancelled
+		}
+
 		lobby.Clients[strings.ToLower(name)] = client
 
 		// send JOINED message to client to let client know the join was successful
 		_ = NewBasicMessage("JOINED", name).Send(socket)
-
-		d.call(joinType, &Join{
-			Client: client,
-			Lobby:  lobby,
-		})
 	}
 	return
 }

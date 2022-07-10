@@ -111,8 +111,13 @@ type LobbyCreate struct {
 }
 
 type Join struct {
-	Client *Client
-	Lobby  *Lobby
+	Client    *Client
+	Lobby     *Lobby
+	cancelled bool
+}
+
+func (j *Join) Cancel() {
+	j.cancelled = true
 }
 
 type Leave struct {
