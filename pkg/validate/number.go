@@ -1,6 +1,8 @@
 package validate
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrNumberNotNumber = errors.New("number is not a number")
@@ -74,6 +76,10 @@ func (ns *NumberScheme) Check(i interface{}) error {
 	case uint32:
 		num = int64(t)
 	case uint64:
+		num = int64(t)
+	case float32:
+		num = int64(t)
+	case float64:
 		num = int64(t)
 	default:
 		return ErrNumberNotNumber
