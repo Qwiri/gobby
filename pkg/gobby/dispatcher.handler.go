@@ -23,7 +23,7 @@ var (
 func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, msg *Message) (err error) {
 	// unauthorized handlers
 	switch msg.Command {
-	case "JOIN":
+	case "join":
 		var (
 			username string
 			password string
