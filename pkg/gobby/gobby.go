@@ -42,12 +42,12 @@ func (g *Gobby) BySocket(socket *websocket.Conn) (*Lobby, *Client, bool) {
 }
 
 func (g *Gobby) RemoveClient(lobby *Lobby, client *Client) {
+	delete(lobby.Clients, strings.ToLower(client.Name))
 	// call leave event
 	g.Dispatcher.call(leaveType, &Leave{
 		Client: client,
 		Lobby:  lobby,
 	})
-	delete(lobby.Clients, strings.ToLower(client.Name))
 }
 
 // Aliases
