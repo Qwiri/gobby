@@ -10,103 +10,77 @@ import (
 var (
 	ErrHandlerNotFound = errors.New("handler not found")
 	ErrPayloadTooLarge = errors.New("payload too large")
+	ErrMessageFormat   = errors.New("message format error")
 
 	ErrArgs              = errors.New("args mismatch")
 	ErrSecretMismatch    = errors.New("secret mismatch")
 	ErrNameAlreadyExists = errors.New("a player with the same name already exists")
 	ErrNameInvalid       = errors.New("invalid name")
+	ErrPassInvalid       = errors.New("invalid password")
 	ErrCancelled         = errors.New("event cancelled")
 )
 
-func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, data []byte) (err error) {
-	str := strings.TrimSpace(string(data))
-	spl := strings.Split(str, " ")
-
-	switch spl[0] {
+func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, msg *Message) (err error) {
+	// unauthorized handlers
+	switch msg.Command {
 	case "JOIN":
-		var name, password string
-		// parse user:daniel pass:test token:ajcjvj
-		for _, a := range spl[1:] {
-			kv := strings.Split(a, ":")
-			if len(kv) != 2 {
-				continue
-			}
-			k, v := kv[0], kv[1]
-			switch k {
-			case "name":
-				name = v
-			case "pass", "password", "secret":
-				password = v
-			}
+		var (
+			username string
+			password string
+			ok       bool
+		)
+		if len(msg.Args) <= 0 {
+			return msg.ReplyError(socket, ErrArgs)
 		}
 
-		// check if a name or token was given
-		// and if the name is valid
-		if name == "" {
-			return ErrArgs
+		// parse name and check validity
+		if username, ok = msg.Args[0].(string); !ok {
+			return msg.ReplyError(socket, ErrNameInvalid)
 		}
-		if !IsNameValid(name) {
-			return ErrNameInvalid
+		if !IsNameValid(username) {
+			return msg.ReplyError(socket, ErrNameInvalid)
 		}
 
 		// check if the lobby is password protected
 		if lobby.Secret != "" {
+			if len(msg.Args) > 1 {
+				if password, ok = msg.Args[1].(string); !ok {
+					return msg.ReplyError(socket, ErrPassInvalid)
+				}
+			}
 			if password != lobby.Secret {
-				return ErrSecretMismatch
+				return msg.ReplyError(socket, ErrSecretMismatch)
 			}
 		}
 
 		// check if the name is already in the lobby
-		if _, ok := lobby.Clients[strings.ToLower(name)]; ok {
-			return ErrNameAlreadyExists
+		if _, ok = lobby.Clients[strings.ToLower(username)]; ok {
+			return msg.ReplyError(socket, ErrNameAlreadyExists)
 		}
 
-		client := NewClient(socket, name)
+		client := NewClient(socket, username)
+
+		// call join event which can be cancelled
 		event := &Join{
-			Client: client,
-			Lobby:  lobby,
+			Client:  client,
+			Lobby:   lobby,
+			Message: msg,
 		}
 		d.call(joinType, event)
 
 		if event.cancelled {
-			return ErrCancelled
+			return msg.ReplyError(socket, ErrCancelled)
 		}
 
-		lobby.Clients[strings.ToLower(name)] = client
+		lobby.Clients[strings.ToLower(username)] = client
 
 		// send JOINED message to client to let client know the join was successful
-		_ = NewBasicMessage("JOINED", name).Send(socket)
+		return msg.ReplyBasic(socket, "JOINED", username)
 	}
-	return
+	return nil
 }
 
-func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []byte) (err error) {
-	// check payload size
-	if len(data) > 4096 {
-		return ErrPayloadTooLarge
-	}
-
-	// find client and allow authorized routes or allow unauthorized routes if not found
-	_, client, ok := d.gobby.BySocket(socket)
-	if !ok {
-		return d.handleUnauthorized(socket, lobby, data)
-	}
-
-	// send raw message event
-	d.call(messageReceiveRawType, &MessageReceiveRaw{
-		Sender: client,
-		Lobby:  lobby,
-		Data:   data,
-	})
-
-	// decode message
-	var msg *Message
-	if err = json.Unmarshal(data, &msg); err != nil {
-		Warnf(socket, "cannot decode JSON message")
-		return
-	}
-	msg.Command = strings.TrimSpace(strings.ToLower(msg.Command))
-
+func (d *Dispatcher) handleAuthorized(socket *websocket.Conn, lobby *Lobby, msg *Message, client *Client) (err error) {
 	// check if the message is a reply
 	if msg.To != "" {
 		d.handleReply(lobby, client, msg)
@@ -128,6 +102,29 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 	})
 
 	return h.Execute(socket, lobby, client, msg)
+}
+
+func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []byte) (err error) {
+	// check payload size
+	if len(data) > 4096 {
+		return ErrPayloadTooLarge
+	}
+
+	// decode message
+	var msg *Message
+	if err = json.Unmarshal(data, &msg); err != nil {
+		Warnf(socket, "cannot decode JSON message")
+		return ErrMessageFormat
+	}
+	msg.Command = strings.TrimSpace(strings.ToLower(msg.Command))
+
+	// find client and allow authorized routes or allow unauthorized routes if not found
+	_, client, ok := d.gobby.BySocket(socket)
+	if ok {
+		return d.handleAuthorized(socket, lobby, msg, client)
+	} else {
+		return d.handleUnauthorized(socket, lobby, msg)
+	}
 }
 
 func (d *Dispatcher) handleReply(lobby *Lobby, client *Client, msg *Message) {

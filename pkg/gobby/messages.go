@@ -113,3 +113,15 @@ func (m *Message) ReplyWith(client *Client, msg Message) error {
 	msg.To = m.ID
 	return msg.SendTo(client)
 }
+
+func (m *Message) ReplyBasic(client *websocket.Conn, command string, args ...interface{}) error {
+	msg := NewBasicMessage(command, args...)
+	msg.To = m.ID
+	return msg.Send(client)
+}
+
+func (m *Message) ReplyError(client *websocket.Conn, err error) error {
+	msg := NewErrorMessage(err)
+	msg.To = m.ID
+	return msg.Send(client)
+}

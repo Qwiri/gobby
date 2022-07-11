@@ -113,6 +113,7 @@ type LobbyCreate struct {
 type Join struct {
 	Client    *Client
 	Lobby     *Lobby
+	Message   *Message
 	cancelled bool
 }
 
