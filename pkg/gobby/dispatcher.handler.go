@@ -3,6 +3,7 @@ package gobby
 import (
 	"encoding/json"
 	"errors"
+	"github.com/Qwiri/gobby/internal/handlerutil"
 	"github.com/gofiber/websocket/v2"
 	"strings"
 )
@@ -75,7 +76,14 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, ms
 		lobby.Clients[strings.ToLower(username)] = client
 
 		// send JOINED message to client to let client know the join was successful
-		return msg.ReplyBasic(socket, "JOINED", username)
+		_ = msg.ReplyBasic(socket, "JOINED", username)
+		// send current state
+		_ = NewBasicMessageWith[State]("STATE_CHANGE", lobby.State, lobby.State)
+		// send PLAYER_JOIN to all players
+		lobby.BroadcastForce(NewBasicMessageWith[string]("PLAYER_JOIN", client.Name))
+		// send LIST message to all clients
+		lobby.BroadcastForce(handlerutil.CreateListMessage(lobby))
+		return nil
 	}
 	return nil
 }

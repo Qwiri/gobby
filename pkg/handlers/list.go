@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/Qwiri/gobby/internal/handlerutil"
 	"github.com/Qwiri/gobby/pkg/gobby"
 	"github.com/Qwiri/gobby/pkg/validate"
 )
@@ -9,13 +10,6 @@ import (
 var List = &gobby.Handler{
 	Validation: validate.Schemes{},
 	Handler: func(event *gobby.Handle) error {
-		names := make([]string, len(event.Lobby.Clients))
-		i := 0
-		for _, c := range event.Lobby.Clients {
-			names[i] = c.Name
-			i += 1
-		}
-		return event.Message.ReplyWith(event.Client,
-			*gobby.NewBasicMessageWith("LIST", names...))
+		return event.Message.ReplyWith(event.Client, *handlerutil.CreateListMessage(event.Lobby))
 	},
 }

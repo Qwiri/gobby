@@ -1,6 +1,7 @@
 package gobby
 
 import (
+	"github.com/Qwiri/gobby/internal/handlerutil"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"strings"
@@ -48,6 +49,10 @@ func (g *Gobby) RemoveClient(lobby *Lobby, client *Client) {
 		Client: client,
 		Lobby:  lobby,
 	})
+	// send PLAYER_LEAVE to all players
+	lobby.BroadcastForce(NewBasicMessageWith[string]("PLAYER_LEAVE", client.Name))
+	// send LIST message to all clients
+	lobby.BroadcastForce(handlerutil.CreateListMessage(lobby))
 }
 
 // Aliases
