@@ -77,7 +77,7 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, ms
 		// send JOINED message to client to let client know the join was successful
 		_ = msg.ReplyBasic(socket, "JOINED", username)
 		// send current state
-		_ = NewBasicMessageWith[State]("STATE_CHANGE", lobby.State, lobby.State)
+		_ = client.Send(NewBasicMessageWith[State]("STATE_CHANGE", lobby.State, lobby.State))
 		// send PLAYER_JOIN to all players
 		lobby.BroadcastForce(NewBasicMessageWith[string]("PLAYER_JOIN", client.Name))
 		// send LIST message to all clients

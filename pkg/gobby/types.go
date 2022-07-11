@@ -23,6 +23,10 @@ func NewClient(socket *websocket.Conn, name string) *Client {
 	}
 }
 
+func (c *Client) Send(msg *Message) error {
+	return msg.SendTo(c)
+}
+
 ///
 
 type Lobby struct {
