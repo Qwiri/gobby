@@ -3,7 +3,6 @@ package gobby
 import (
 	"errors"
 	"github.com/Qwiri/gobby/pkg/validate"
-	"github.com/gofiber/websocket/v2"
 )
 
 type Handler struct {
@@ -47,7 +46,7 @@ var (
 	ErrRoleNotAllowed  = errors.New("handler cannot be used with this role")
 )
 
-func (h *Handler) Execute(socket *websocket.Conn, lobby *Lobby, client *Client, msg *Message) (err error) {
+func (h *Handler) Execute(lobby *Lobby, client *Client, msg *Message) (err error) {
 	// Check State
 	if h.States != 0 {
 		if lobby.State&h.States != lobby.State {

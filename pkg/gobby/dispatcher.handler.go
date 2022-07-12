@@ -87,7 +87,7 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, ms
 	return nil
 }
 
-func (d *Dispatcher) handleAuthorized(socket *websocket.Conn, lobby *Lobby, msg *Message, client *Client) (err error) {
+func (d *Dispatcher) handleAuthorized(lobby *Lobby, msg *Message, client *Client) (err error) {
 	// check if the message is a reply
 	if msg.To != "" {
 		d.handleReply(lobby, client, msg)
@@ -108,7 +108,7 @@ func (d *Dispatcher) handleAuthorized(socket *websocket.Conn, lobby *Lobby, msg 
 		Handler: h,
 	})
 
-	return h.Execute(socket, lobby, client, msg)
+	return h.Execute(lobby, client, msg)
 }
 
 func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []byte) (err error) {
@@ -128,7 +128,7 @@ func (d *Dispatcher) handleMessage(socket *websocket.Conn, lobby *Lobby, data []
 	// find client and allow authorized routes or allow unauthorized routes if not found
 	_, client, ok := d.gobby.BySocket(socket)
 	if ok {
-		return d.handleAuthorized(socket, lobby, msg, client)
+		return d.handleAuthorized(lobby, msg, client)
 	} else {
 		return d.handleUnauthorized(socket, lobby, msg)
 	}
