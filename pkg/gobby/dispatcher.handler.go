@@ -60,15 +60,14 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, ms
 
 		client := NewClient(socket, username)
 
-		// call join event which can be cancelled
-		event := &Join{
+		// call pre-join event which can be cancelled
+		preEvent := &PreJoinEvent{
 			Client:  client,
 			Lobby:   lobby,
 			Message: msg,
 		}
-		d.call(joinType, event)
-
-		if event.cancelled {
+		d.call(preJoinType, preEvent)
+		if preEvent.cancelled {
 			return msg.ReplyError(socket, ErrCancelled)
 		}
 
@@ -82,6 +81,15 @@ func (d *Dispatcher) handleUnauthorized(socket *websocket.Conn, lobby *Lobby, ms
 		lobby.BroadcastForce(NewBasicMessageWith[string]("PLAYER_JOIN", client.Name))
 		// send LIST message to all clients
 		lobby.BroadcastForce(CreateListMessage(lobby))
+
+		// call post join
+		postEvent := &PostJoinEvent{
+			Client:  client,
+			Lobby:   lobby,
+			Message: msg,
+		}
+		d.call(postJoinType, postEvent)
+
 		return nil
 	}
 	return nil
@@ -101,7 +109,7 @@ func (d *Dispatcher) handleAuthorized(lobby *Lobby, msg *Message, client *Client
 	}
 
 	// call event to listeners
-	d.call(messageReceiveType, &MessageReceive{
+	d.call(messageReceiveType, &MessageReceiveEvent{
 		Sender:  client,
 		Lobby:   lobby,
 		Message: msg,
@@ -143,7 +151,7 @@ func (d *Dispatcher) handleReply(lobby *Lobby, client *Client, msg *Message) {
 		return
 	}
 	reply <- msg
-	d.call(messageReceiveReplyType, &MessageReceiveReply{
+	d.call(messageReceiveReplyType, &MessageReceiveReplyEvent{
 		Sender:  client,
 		Lobby:   lobby,
 		Message: msg,

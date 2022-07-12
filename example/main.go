@@ -24,7 +24,7 @@ func main() {
 		"LIST": handlers.List,
 	})
 
-	g.MustOn(func(event *gobby.Join) {
+	g.MustOn(func(event *gobby.PreJoinEvent) {
 		client, lobby := event.Client, event.Lobby
 		gobby.Infof(client, "joined lobby %s. Requesting client version.", lobby.ID)
 

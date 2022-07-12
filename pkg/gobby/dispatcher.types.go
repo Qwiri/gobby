@@ -2,7 +2,8 @@ package gobby
 
 const (
 	lobbyCreateType eventType = iota //
-	joinType                         //
+	preJoinType                      //
+	postJoinType
 	leaveType
 	messageReceiveRawType   //
 	messageReceiveType      //
@@ -11,135 +12,160 @@ const (
 
 func (d *Dispatcher) getEventHandler(i interface{}) eventHandler {
 	switch t := i.(type) {
-	case func(event *LobbyCreate):
+	case func(event *LobbyCreateEvent):
 		return lobbyCreateHandler(t)
-	case func(event *Join):
-		return joinHandler(t)
-	case func(event *Leave):
+	case func(event *PreJoinEvent):
+		return preJoinHandler(t)
+	case func(event *PostJoinEvent):
+		return postJoinHandler(t)
+	case func(event *LeaveEvent):
 		return leaveHandler(t)
-	case func(event *MessageReceiveRaw):
+	case func(event *MessageReceiveRawEvent):
 		return receiveRawHandler(t)
-	case func(event *MessageReceive):
+	case func(event *MessageReceiveEvent):
 		return receiveHandler(t)
-	case func(event *MessageReceiveReply):
+	case func(event *MessageReceiveReplyEvent):
 		return receiveReplyHandler(t)
 	}
 	return nil
 }
 
-type lobbyCreateHandler func(event *LobbyCreate)
+type lobbyCreateHandler func(event *LobbyCreateEvent)
 
 func (l lobbyCreateHandler) Type() eventType {
 	return lobbyCreateType
 }
 func (l lobbyCreateHandler) Handle(i interface{}) {
-	if v, o := i.(*LobbyCreate); o {
+	if v, o := i.(*LobbyCreateEvent); o {
 		l(v)
 	}
 }
 
 ///
 
-type joinHandler func(event *Join)
+type preJoinHandler func(event *PreJoinEvent)
 
-func (j joinHandler) Type() eventType {
-	return joinType
+func (j preJoinHandler) Type() eventType {
+	return preJoinType
 }
-func (j joinHandler) Handle(i interface{}) {
-	if v, o := i.(*Join); o {
+func (j preJoinHandler) Handle(i interface{}) {
+	if v, o := i.(*PreJoinEvent); o {
 		j(v)
 	}
 }
 
 ///
 
-type leaveHandler func(event *Leave)
+type postJoinHandler func(event *PostJoinEvent)
+
+func (p postJoinHandler) Type() eventType {
+	return postJoinType
+}
+
+func (p postJoinHandler) Handle(i interface{}) {
+	if v, o := i.(*PostJoinEvent); o {
+		p(v)
+	}
+}
+
+///
+
+type leaveHandler func(event *LeaveEvent)
 
 func (l leaveHandler) Type() eventType {
 	return leaveType
 }
 func (l leaveHandler) Handle(i interface{}) {
-	if v, o := i.(*Leave); o {
+	if v, o := i.(*LeaveEvent); o {
 		l(v)
 	}
 }
 
 ///
 
-type receiveRawHandler func(event *MessageReceiveRaw)
+type receiveRawHandler func(event *MessageReceiveRawEvent)
 
 func (r receiveRawHandler) Type() eventType {
 	return messageReceiveRawType
 }
 func (r receiveRawHandler) Handle(i interface{}) {
-	if v, o := i.(*MessageReceiveRaw); o {
+	if v, o := i.(*MessageReceiveRawEvent); o {
 		r(v)
 	}
 }
 
 ///
 
-type receiveReplyHandler func(event *MessageReceiveReply)
+type receiveReplyHandler func(event *MessageReceiveReplyEvent)
 
 func (r receiveReplyHandler) Type() eventType {
 	return messageReceiveReplyType
 }
 func (r receiveReplyHandler) Handle(i interface{}) {
-	if v, o := i.(*MessageReceiveReply); o {
+	if v, o := i.(*MessageReceiveReplyEvent); o {
 		r(v)
 	}
 }
 
 ///
 
-type receiveHandler func(event *MessageReceive)
+type receiveHandler func(event *MessageReceiveEvent)
 
 func (r receiveHandler) Type() eventType {
 	return messageReceiveType
 }
 func (r receiveHandler) Handle(i interface{}) {
-	if v, o := i.(*MessageReceive); o {
+	if v, o := i.(*MessageReceiveEvent); o {
 		r(v)
 	}
 }
 
 // message receive
 
-type LobbyCreate struct {
+type LobbyCreateEvent struct {
 	Lobby *Lobby
 	Addr  string
 }
 
-type Join struct {
+// PreJoinEvent is called when a player tries to JOIN a lobby
+// if canceled, the player receives an error on join and the socket is closed
+type PreJoinEvent struct {
 	Client    *Client
 	Lobby     *Lobby
 	Message   *Message
 	cancelled bool
 }
 
-func (j *Join) Cancel() {
+func (j *PreJoinEvent) Cancel() {
 	j.cancelled = true
 }
 
-type Leave struct {
+// PostJoinEvent is called after a player successfully JOINed a lobby
+type PostJoinEvent struct {
+	Client  *Client
+	Lobby   *Lobby
+	Message *Message
+}
+
+type LeaveEvent struct {
 	Client *Client
 	Lobby  *Lobby
 }
 
-type MessageReceive struct {
+type MessageReceiveEvent struct {
 	Sender  *Client
 	Lobby   *Lobby
 	Message *Message
 	Handler *Handler
 }
 
-type MessageReceiveReply struct {
+type MessageReceiveReplyEvent struct {
 	Sender  *Client
 	Lobby   *Lobby
 	Message *Message
 }
 
-type MessageReceiveRaw struct {
+type MessageReceiveRawEvent struct {
 	Sender *Client
 	Lobby  *Lobby
 	Data   []byte

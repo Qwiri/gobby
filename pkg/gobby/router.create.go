@@ -22,7 +22,7 @@ func (r *Router) routeLobbyCreate(ctx *fiber.Ctx) error {
 	lobby := NewLobby(id)
 
 	// dispatch lobby create event
-	r.g.Dispatcher.call(lobbyCreateType, &LobbyCreate{
+	r.g.Dispatcher.call(lobbyCreateType, &LobbyCreateEvent{
 		Lobby: lobby,
 		Addr:  ctx.IP(),
 	})
