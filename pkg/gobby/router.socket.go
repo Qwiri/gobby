@@ -29,9 +29,8 @@ func (r *Router) routeGetSocket(socket *websocket.Conn) {
 
 	// check if lobby exists
 	r.g.lobbiesMu.RLock()
-	defer r.g.lobbiesMu.RUnlock()
-
 	lobby, ok := r.g.Lobbies[lobbyID]
+	r.g.lobbiesMu.RUnlock()
 	if !ok {
 		_ = NewErrorMessage(ErrLobbyNotFound).Send(socket)
 		return
